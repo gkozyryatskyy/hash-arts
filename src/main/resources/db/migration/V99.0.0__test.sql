@@ -1,6 +1,3 @@
-insert into image(id, name, ipfs)
-values (1000000, 'test_image', 'QmWYqBBz9BTm5aZ7c29wQnhhc24UaMvLcBTgqoc7DDKW2t');
-
 insert into token(id, hedera_token_id, name, symbol, supply_public_key, supply_private_key)
 values (1000000, '0.0.5932364', 'hash-arts-nft-test', 'haTestNft',
         '3036301006072a8648ce3d020106052b8104000a03220003086e11ba4fb861f2e5f79eea5c5bc4c57468352b6e5383df96e9f4c8977a47d1',

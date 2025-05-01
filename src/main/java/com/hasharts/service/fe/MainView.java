@@ -4,8 +4,11 @@ import com.hasharts.db.model.nft.Image;
 import com.hasharts.db.model.nft.Nft;
 import com.hasharts.db.model.nft.Token;
 import com.hasharts.service.hedera.HederaNftService;
+import com.hasharts.service.hedera.HederaNftService.MintNftResult;
 import com.hasharts.service.image.GoogleImageGenerator;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.avatar.Avatar;
+import com.vaadin.flow.component.avatar.AvatarVariant;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
@@ -13,6 +16,8 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.TabSheet;
@@ -42,10 +47,12 @@ public class MainView extends VerticalLayout {
 
     private final Grid<Token> tokenGrid;
     private Token selectedToken;
+    private TextField tokenName;
 
     private final Grid<Image> imageGrid;
     private final TextField aiTest;
     private Image selectedImage;
+    private Avatar imageAvatar;
 
     private final Grid<Nft> nftGrid;
 
@@ -59,13 +66,13 @@ public class MainView extends VerticalLayout {
                 .getValue("nft.token.mint.gateway.local.prefix", String.class);
         log.infof("MainView: Image:%s Nft:%s", imageGenerator, nftService);
         // Token
-        tokenGrid = tokenGrid();
+        this.tokenGrid = tokenGrid();
         // Image
-        imageGrid = imageGrid();
+        this.imageGrid = imageGrid();
         updateImageGrid();
-        aiTest = new TextField();
-        aiTest.setPlaceholder("Enter text for AI image generation");
-        aiTest.setWidth("800px");
+        this.aiTest = new TextField();
+        this.aiTest.setPlaceholder("Enter text for AI image generation");
+        this.aiTest.setWidth("800px");
         // generate Image
         Button generate = new Button("Generate", e -> {
             try {
@@ -87,14 +94,16 @@ public class MainView extends VerticalLayout {
                 throw new RuntimeException("Image not selected");
             }
             try {
-                this.nftService.mint(selectedToken, selectedImage);
+                MintNftResult res = nftService.mint(selectedToken, selectedImage);
+                updateNftGrid();
+                Notification.show("Minted NFT Serial:" + res.entity().getSerials().getFirst(), 2000, Position.TOP_CENTER);
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
-            updateImageGrid();
         });
         // Nft
-        nftGrid = nftGrid();
+        this.nftGrid = nftGrid();
+        updateNftGrid();
         HorizontalLayout hImages = new HorizontalLayout(aiTest, generate, mint);
         VerticalLayout vImages = new VerticalLayout(hImages, imageGrid);
         // Tabs
@@ -105,7 +114,15 @@ public class MainView extends VerticalLayout {
         tabSheet.add("Tokens", new LazyComponent(() -> tokenGrid));
         tabSheet.add("Images", new LazyComponent(() -> vImages));
         tabSheet.add("NFTs", new LazyComponent(() -> nftGrid));
-        add(tabSheet);
+        // selected
+        this.tokenName = new TextField();
+        this.tokenName.setReadOnly(true);
+        this.imageAvatar = new Avatar("No Image Selected");
+        this.imageAvatar.addThemeVariants(AvatarVariant.LUMO_XLARGE);
+        HorizontalLayout hMain = new HorizontalLayout(tokenName, imageAvatar);
+        VerticalLayout vMain = new VerticalLayout(hMain, tabSheet);
+        add(vMain);
+        // Base config
         addErrorHandling();
     }
 
@@ -121,8 +138,11 @@ public class MainView extends VerticalLayout {
                 .setAutoWidth(true).setFlexGrow(0);
         grid.addSelectionListener(selection -> {
             Optional<Token> selected = selection.getFirstSelectedItem();
-            selected.ifPresent(token -> this.selectedToken = token);
-            System.out.println("Selected token: " + selectedToken.getName());
+            selected.ifPresent(token -> {
+                this.selectedToken = token;
+                this.tokenName.setValue(token.getName());
+            });
+            log.info("Selected token: " + selectedToken.getName());
         });
         grid.setAllRowsVisible(true);
         List<Token> tokens = Token.<Token>findAll().list();
@@ -154,8 +174,11 @@ public class MainView extends VerticalLayout {
         grid.setAllRowsVisible(true);
         grid.addSelectionListener(selection -> {
             Optional<Image> selected = selection.getFirstSelectedItem();
-            selected.ifPresent(image -> this.selectedImage = image);
-            System.out.println("Selected image: " + selectedImage.getName());
+            selected.ifPresent(image -> {
+                this.selectedImage = image;
+                this.imageAvatar.setImage(gatewayLocalPrefix + image.getIpfs());
+            });
+            log.info("Selected image: " + selectedImage.getName());
         });
         return grid;
     }
@@ -180,6 +203,12 @@ public class MainView extends VerticalLayout {
                 .setAutoWidth(true).setFlexGrow(0);
         grid.setAllRowsVisible(true);
         return grid;
+    }
+
+    public void updateNftGrid() {
+        List<Nft> nft = Nft.<Nft>findAll().list();
+        nftGrid.setItems(nft);
+        nftGrid.recalculateColumnWidths();
     }
 
     private static Renderer<Image> createEmployeeRenderer(String prefix) {

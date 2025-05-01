@@ -1,13 +1,15 @@
 plugins {
     id 'java'
     id 'io.quarkus'
+    id 'com.vaadin'
     id 'io.freefair.lombok' version "8.12.2.1"
 }
 
 repositories {
     mavenCentral()
-    mavenLocal()
     maven { url 'https://jitpack.io' }
+    maven { setUrl("https://maven.vaadin.com/vaadin-prereleases") }
+    mavenLocal()
 }
 
 var flyway_version = '4.9.7'
@@ -16,6 +18,7 @@ var testcontainers_version = '1.21.0'
 
 dependencies {
     implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
+    implementation enforcedPlatform("com.vaadin:vaadin-bom:$vaadinVersion")
     // Quarkus rest server
     implementation 'io.quarkus:quarkus-rest'
     implementation 'io.quarkus:quarkus-rest-jackson'
@@ -24,10 +27,9 @@ dependencies {
     implementation 'io.quarkus:quarkus-rest-client-jackson'
     // Quarkus db
     implementation 'io.quarkus:quarkus-jdbc-postgresql'
-    implementation 'io.quarkus:quarkus-hibernate-reactive-panache'
-    implementation 'io.quarkus:quarkus-reactive-pg-client'
-    // migration
+    implementation 'io.quarkus:quarkus-hibernate-orm-panache'
     implementation 'io.quarkus:quarkus-jdbc-postgresql'
+    // migration
     implementation 'io.quarkus:quarkus-flyway'
     implementation "org.flywaydb:flyway-database-postgresql:$flyway_version"
     // Hedera sdk
@@ -35,6 +37,11 @@ dependencies {
     implementation "com.hedera.hashgraph:sdk:2.53.0"
     // IPFS
     implementation "com.github.ipfs:java-ipfs-http-client:$ipfs_version"
+    // UI
+    implementation "com.vaadin:vaadin-quarkus-extension:$vaadinVersion"
+    implementation "org.jboss.slf4j:slf4j-jboss-logmanager:1.1.0.Final"
+    implementation("com.vaadin:vaadin")
+    implementation("com.vaadin:vaadin-jandex")
     // Test
     testImplementation 'io.quarkus:quarkus-junit5'
     testImplementation 'io.rest-assured:rest-assured'

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hasharts.client.google.model.ResponseDto;
 import com.hasharts.service.image.GoogleImageGenerator.GenerateAndUploadResult;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.vertx.VertxContextSupport;
 import jakarta.inject.Inject;
 import lombok.extern.jbosslog.JBossLog;
 import org.junit.jupiter.api.Assertions;
@@ -24,8 +23,7 @@ public class GoogleImageGeneratorTest {
     @Disabled // for not to use tokens from tests
     @Test
     public void generateImage() {
-        ResponseDto image = imageGenerator.generate("Generate pixelated image of NFT with baby Yoda")
-                .await().indefinitely();
+        ResponseDto image = imageGenerator.generate("Generate pixelated image of NFT with baby Yoda");
         Assertions.assertNotNull(
                 image.getCandidates().getFirst().getContent().getParts().getFirst().getInlineData().getData());
     }
@@ -36,7 +34,7 @@ public class GoogleImageGeneratorTest {
         // http://localhost:8080/ipfs/QmbSG3eZGAJgQRmyNR8krXRHupLZZaEZiX7aU78bDiTxW8
         ResponseDto image = json.readValue(
                 this.getClass().getClassLoader().getResourceAsStream("images/google-image.json"), ResponseDto.class);
-        GenerateAndUploadResult res = VertxContextSupport.subscribeAndAwait(() -> imageGenerator.upload(name, image));
+        GenerateAndUploadResult res = imageGenerator.upload(name, image);
         log.info("uploadImage: " + res);
         // test node
         Assertions.assertEquals(name, res.node().name.orElse(null));

@@ -7,10 +7,10 @@ import com.hasharts.db.model.nft.Image;
 import com.hasharts.service.ipfs.IpfsService;
 import io.ipfs.api.MerkleNode;
 import io.ipfs.multibase.binary.Base64;
-import io.quarkus.hibernate.reactive.panache.common.WithTransaction;
-import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import java.io.IOException;
 import java.time.Instant;
 import lombok.Getter;
 import lombok.extern.jbosslog.JBossLog;
@@ -31,38 +31,39 @@ public class GoogleImageGenerator {
     @Inject
     IpfsService ipfsService;
 
-    public Uni<ResponseDto> generate(String text) {
+    public ResponseDto generate(String text) {
         log.infof("generate test:%s", text);
-        return client.generate(key, new RequestDto(text))
-                .invoke(e -> log.info("generate.usageMetadata:" + e.getUsageMetadata()));
+        ResponseDto retval = client.generate(key, new RequestDto(text));
+        log.info("generate.usageMetadata:" + retval.getUsageMetadata());
+        return retval;
     }
 
 
     public record GenerateAndUploadResult(MerkleNode node, Image entity) {
     }
 
-    @WithTransaction
-    public Uni<GenerateAndUploadResult> upload(String name, ResponseDto input) {
+    @Transactional
+    public GenerateAndUploadResult upload(String name, ResponseDto input) throws IOException {
         // persist to IFPS
         String content = input.imageContent();
         if (content == null) {
-            return Uni.createFrom().failure(new IllegalArgumentException("imageContent is null"));
+            throw new IllegalArgumentException("imageContent is null");
         } else {
-            return ipfsService.add(defaultName, Base64.decodeBase64(content))
-                    .chain(e -> {
-                        Image image = new Image();
-                        Instant now = Instant.now();
-                        image.setCreatedAt(now);
-                        image.setUpdatedAt(now);
-                        image.setName(name);
-                        image.setIpfs(e.hash.toBase58());
-                        return image.<Image>persist().map(entry -> new GenerateAndUploadResult(e, entry));
-                    });
+            MerkleNode reval = ipfsService.add(defaultName, Base64.decodeBase64(content));
+            Image image = new Image();
+            Instant now = Instant.now();
+            image.setCreatedAt(now);
+            image.setUpdatedAt(now);
+            image.setName(name);
+            image.setIpfs(reval.hash.toBase58());
+            image.persist();
+            return new GenerateAndUploadResult(reval, image);
         }
     }
 
-    public Uni<GenerateAndUploadResult> generateAndUpload(String name, String text) {
-        return generate(text).chain(e -> upload(name, e));
+    public GenerateAndUploadResult generateAndUpload(String name, String text) throws IOException {
+        ResponseDto resp = generate(text);
+        return upload(name, resp);
 
     }
 }

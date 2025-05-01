@@ -2,10 +2,12 @@ pluginManagement {
     repositories {
         mavenCentral()
         gradlePluginPortal()
+        maven { setUrl("https://maven.vaadin.com/vaadin-prereleases") }
         mavenLocal()
     }
     plugins {
         id "${quarkusPluginId}" version "${quarkusPluginVersion}"
+        id 'com.vaadin' version "${vaadinVersion}"
     }
 }
 rootProject.name='hash-arts'

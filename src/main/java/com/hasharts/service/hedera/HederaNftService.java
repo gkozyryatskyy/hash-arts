@@ -1,31 +1,33 @@
 package com.hasharts.service.hedera;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hasharts.db.model.nft.Image;
 import com.hasharts.db.model.nft.Nft;
 import com.hasharts.service.hedera.model.NftMetadataV2;
 import com.hasharts.service.ipfs.IpfsService;
-import com.hasharts.util.VertxUtil;
 import com.hedera.hashgraph.sdk.AccountId;
 import com.hedera.hashgraph.sdk.Client;
 import com.hedera.hashgraph.sdk.Hbar;
+import com.hedera.hashgraph.sdk.PrecheckStatusException;
 import com.hedera.hashgraph.sdk.PrivateKey;
+import com.hedera.hashgraph.sdk.ReceiptStatusException;
 import com.hedera.hashgraph.sdk.TokenCreateTransaction;
-import com.hedera.hashgraph.sdk.TokenDeleteTransaction;
 import com.hedera.hashgraph.sdk.TokenId;
 import com.hedera.hashgraph.sdk.TokenMintTransaction;
 import com.hedera.hashgraph.sdk.TokenSupplyType;
 import com.hedera.hashgraph.sdk.TokenType;
 import com.hedera.hashgraph.sdk.TransactionReceipt;
 import com.hasharts.db.model.nft.Token;
-import io.quarkus.hibernate.reactive.panache.common.WithTransaction;
-import io.smallrye.mutiny.Uni;
+import com.hedera.hashgraph.sdk.TransactionResponse;
+import io.ipfs.api.MerkleNode;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeoutException;
 import lombok.extern.jbosslog.JBossLog;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -52,8 +54,9 @@ public class HederaNftService {
     public record CreateNftResult(TransactionReceipt receipt, Token entity) {
     }
 
-    @WithTransaction
-    public Uni<CreateNftResult> create(String name, String symbol, long maxSupply) {
+    @Transactional
+    public CreateNftResult create(String name, String symbol, long maxSupply)
+            throws PrecheckStatusException, TimeoutException, ReceiptStatusException {
         PrivateKey supplyKey = PrivateKey.generateECDSA();
         TokenCreateTransaction nftCreate = new TokenCreateTransaction()
                 .setTokenName(name)
@@ -68,47 +71,42 @@ public class HederaNftService {
                 .freezeWith(client);
         TokenCreateTransaction nftCreateTxSign = nftCreate.sign(PrivateKey.fromStringDER(operatorKeyDer));
         log.infof("Nft create Name:%s symbol:%s", name, symbol);
-        return VertxUtil.runOnContext(Uni.createFrom().completionStage(nftCreateTxSign.executeAsync(client))
-                        .invoke(e -> log.infof("Nft create tx sent. Tx:%s", e.transactionId))
-                        // get receipt
-                        .chain(e -> Uni.createFrom().completionStage(e.getReceiptAsync(client)))
-                        // log
-                        .invoke(e -> log.infof("Nft create receipt. Token:%s", e.tokenId)))
-                // persist
-                .chain(e -> {
-                    Token token = new Token();
-                    Instant now = Instant.now();
-                    token.setCreatedAt(now);
-                    token.setUpdatedAt(now);
-                    token.setHederaTokenId(Objects.requireNonNull(e.tokenId).toString());
-                    token.setName(nftCreate.getTokenName());
-                    token.setSymbol(nftCreate.getTokenSymbol());
-                    token.setSupplyPublicKey(supplyKey.getPublicKey().toStringDER());
-                    token.setSupplyPrivateKey(supplyKey.toStringDER());
-                    return token.<Token>persist().map(entry -> new CreateNftResult(e, entry));
-                });
+        TransactionResponse tx = nftCreateTxSign.execute(client);
+        log.infof("Nft create tx sent. Tx:%s", tx.transactionId);
+        // get receipt
+        TransactionReceipt receipt = tx.getReceipt(client);
+        log.infof("Nft create receipt. Token:%s", receipt.tokenId);
+        // persist
+        Token token = new Token();
+        Instant now = Instant.now();
+        token.setCreatedAt(now);
+        token.setUpdatedAt(now);
+        token.setHederaTokenId(Objects.requireNonNull(receipt.tokenId).toString());
+        token.setName(nftCreate.getTokenName());
+        token.setSymbol(nftCreate.getTokenSymbol());
+        token.setSupplyPublicKey(supplyKey.getPublicKey().toStringDER());
+        token.setSupplyPrivateKey(supplyKey.toStringDER());
+        token.persist();
+        return new CreateNftResult(receipt, token);
     }
 
     public record MintNftResult(TransactionReceipt receipt, Nft entity) {
     }
 
-    public Uni<MintNftResult> mint(Token token, Image image) {
-        try {
-            String meta = json.writeValueAsString(new NftMetadataV2(image.getName(),
-                    gatewayPrefix + image.getIpfs()
+    public MintNftResult mint(Token token, Image image)
+            throws ReceiptStatusException, PrecheckStatusException, TimeoutException, IOException {
+        String meta = json.writeValueAsString(new NftMetadataV2(image.getName(),
+                gatewayPrefix + image.getIpfs()
 //                    "https://hedera.com/assets/images/favicon.png"
 //                    "https://bafybeidz7rgnm4e6as3cexmmfe76uxpcdvqinvtfljaq5ckw4s65iuudse.ipfs.dweb.link/?filename=nft2.png"
-            ));
-            return ipfs.add("metadata.json", meta)
-                    .chain(metaNode -> mint(token.getId(), token.getHederaTokenId(), token.getSupplyPrivateKey(),
-                            List.of(gatewayPrefix + metaNode.hash.toBase58())));
-        } catch (JsonProcessingException e) {
-            return Uni.createFrom().failure(e);
-        }
+        ));
+        MerkleNode node = ipfs.add("metadata.json", meta);
+        return mint(token.getId(), token.getHederaTokenId(), token.getSupplyPrivateKey(), List.of(gatewayPrefix + node.hash.toBase58()));
     }
 
-    @WithTransaction
-    public Uni<MintNftResult> mint(Long tokenId, String hederaTokenId, String supplyPrivateKey, List<String> data) {
+    @Transactional
+    public MintNftResult mint(Long tokenId, String hederaTokenId, String supplyPrivateKey, List<String> data)
+            throws ReceiptStatusException, PrecheckStatusException, TimeoutException {
         TokenMintTransaction mintTx = new TokenMintTransaction()
                 .setTokenId(TokenId.fromString(hederaTokenId))
                 .setMaxTransactionFee(new Hbar(maxTransactionFee));
@@ -118,41 +116,20 @@ public class HederaNftService {
         mintTx.freezeWith(client);
         TokenMintTransaction mintTxSign = mintTx.sign(PrivateKey.fromStringDER(supplyPrivateKey));
         log.infof("Nft mint TokenId:%s HederaTokenId:%s, Data:%s", tokenId, hederaTokenId, data);
-        return VertxUtil.runOnContext(Uni.createFrom().completionStage(mintTxSign.executeAsync(client))
-                        .invoke(e -> log.infof("Nft mint tx sent. Tx:%s", e.transactionId))
-                        // get receipt
-                        .chain(e -> Uni.createFrom().completionStage(e.getReceiptAsync(client)))
-                        // log
-                        .invoke(e -> log.infof("Nft mint receipt. Serials:%s", e.serials)))
-                // persist
-                .chain(e -> {
-                    Nft nft = new Nft();
-                    Instant now = Instant.now();
-                    nft.setCreatedAt(now);
-                    nft.setUpdatedAt(now);
-                    nft.setTokenId(tokenId);
-                    nft.setHederaTokenId(hederaTokenId);
-                    nft.setSerials(e.serials);
-                    nft.setData(data);
-                    return nft.<Nft>persist().map(entry -> new MintNftResult(e, entry));
-                });
-    }
-
-    @WithTransaction
-    public Uni<TransactionReceipt> delete(Long tokenId, String hederaTokenId) {
-        return VertxUtil.runOnContext((tokenId != null ? Token.deleteById(tokenId) : Uni.createFrom().nullItem())
-                        .chain(e -> {
-                            TokenDeleteTransaction delete = new TokenDeleteTransaction()
-                                    .setTokenId(TokenId.fromString(hederaTokenId))
-                                    .freezeWith(client);
-                            TokenDeleteTransaction deleteTxSign = delete.sign(PrivateKey.fromStringDER(operatorKeyDer));
-                            log.infof("Nft delete TokenId:%s HederaTokenId:%s", tokenId, hederaTokenId);
-                            return Uni.createFrom().completionStage(deleteTxSign.executeAsync(client));
-                        })
-                        .invoke(e -> log.infof("Nft delete tx sent. Tx:%s", e.transactionId))
-                        // get receipt
-                        .chain(e -> Uni.createFrom().completionStage(e.getReceiptAsync(client))))
-                // log
-                .invoke(e -> log.infof("Nft delete receipt. TokenId:%s", e.tokenId));
+        TransactionResponse tx = mintTxSign.execute(client);
+        log.infof("Nft mint tx sent. Tx:%s", tx.transactionId);
+        TransactionReceipt receipt = tx.getReceipt(client);
+        log.infof("Nft mint receipt. Serials:%s", receipt.serials);
+        // persist
+        Nft nft = new Nft();
+        Instant now = Instant.now();
+        nft.setCreatedAt(now);
+        nft.setUpdatedAt(now);
+        nft.setTokenId(tokenId);
+        nft.setHederaTokenId(hederaTokenId);
+        nft.setSerials(receipt.serials);
+        nft.setData(data);
+        nft.persist();
+        return new MintNftResult(receipt, nft);
     }
 }

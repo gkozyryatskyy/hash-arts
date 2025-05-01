@@ -4,10 +4,9 @@ import io.ipfs.api.IPFS;
 import io.ipfs.api.MerkleNode;
 import io.ipfs.api.NamedStreamable;
 import io.ipfs.multihash.Multihash;
-import io.smallrye.mutiny.Uni;
-import io.vertx.mutiny.core.Vertx;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.io.IOException;
 import lombok.extern.jbosslog.JBossLog;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -19,26 +18,24 @@ public class IpfsService {
 
     @Inject
     IPFS ipfs;
-    @Inject
-    Vertx vertx;
     @ConfigProperty(name = "nft.token.mint.gateway.prefix")
     String gatewayPrefix;
 
-    public Uni<MerkleNode> add(String name, String data) {
+    public MerkleNode add(String name, String data) throws IOException {
         return add(name, data.getBytes());
     }
 
-    public Uni<MerkleNode> add(String name, byte[] data) {
+    public MerkleNode add(String name, byte[] data) throws IOException {
         NamedStreamable.ByteArrayWrapper file = new NamedStreamable.ByteArrayWrapper(name, data);
         log.infof("Ipfs add name:%s", name);
-        return vertx.executeBlocking(() -> ipfs.add(file).getFirst())
-                .invoke(e -> log.infof("Ipfs add hash:%s, url:%s", e.hash.toBase58(),
-                        gatewayPrefix + e.hash.toBase58()));
+        MerkleNode reval = ipfs.add(file).getFirst();
+        log.infof("Ipfs add hash:%s, url:%s", reval.hash.toBase58(), gatewayPrefix + reval.hash.toBase58());
+        return reval;
     }
 
-    public Uni<byte[]> get(String base58) {
+    public byte[] get(String base58) throws IOException {
         Multihash filePointer = Multihash.fromBase58(base58);
-        return vertx.executeBlocking(() -> ipfs.cat(filePointer));
+        return ipfs.cat(filePointer);
     }
 
 }

@@ -2,7 +2,6 @@ package com.hasharts.client.google;
 
 import com.hasharts.client.google.model.RequestDto;
 import com.hasharts.client.google.model.ResponseDto;
-import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.inject.Default;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
@@ -35,5 +34,5 @@ public interface GoogleClient {
 //  | base64 --decode > gemini-native-image.png
 
     @POST
-    Uni<ResponseDto> generate(@QueryParam("key") String key, RequestDto request);
+    ResponseDto generate(@QueryParam("key") String key, RequestDto request);
 }

@@ -4,9 +4,7 @@ import com.hasharts.db.model.nft.Image;
 import com.hasharts.db.model.nft.Token;
 import com.hasharts.service.hedera.HederaNftService.CreateNftResult;
 import com.hasharts.service.hedera.HederaNftService.MintNftResult;
-import io.quarkus.hibernate.reactive.panache.Panache;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.vertx.VertxContextSupport;
 import jakarta.inject.Inject;
 import lombok.extern.jbosslog.JBossLog;
 import org.junit.jupiter.api.Assertions;
@@ -28,7 +26,7 @@ public class HederaNftServiceTest {
     public void createToken() throws Throwable {
         String name = "hash-arts-nft-test";
         String symbol = "haTestNft";
-        CreateNftResult res = VertxContextSupport.subscribeAndAwait(() -> service.create(name, symbol, 200));
+        CreateNftResult res = service.create(name, symbol, 200);
         log.info("createToken: " + res);
         // INFO: Nft create tx sent. Tx:0.0.5640351@1746090549.968000649
         // INFO: Nft create receipt. Token:0.0.5932316
@@ -47,11 +45,10 @@ public class HederaNftServiceTest {
     @Order(2)
     public void mintNft() throws Throwable {
         if (token == null) {
-            token = VertxContextSupport.subscribeAndAwait(() -> Panache.withSession(() -> Token.findById(1000000L)));
+            token = Token.findById(1000000L);
         }
-        MintNftResult res = VertxContextSupport.subscribeAndAwait(
-                () -> Panache.withSession(() -> Image.<Image>findById(1000000L))
-                        .chain(e -> service.mint(token, e)));
+        Image image = Image.findById(1000000L);
+        MintNftResult res = service.mint(token, image);
         log.info("mintNft: " + res);
 //        INFO: mintNft: MintNftResult[receipt=TransactionReceipt{transactionId=0.0.5640351@1746092299.562000440, status=SUCCESS, exchangeRate=ExchangeRate{hbars=30000, cents=547697, expirationTime=2025-05-01T10:00:00Z, exchangeRateInCents=18.256566666666668}, nextExchangeRate=ExchangeRate{hbars=30000, cents=554314, expirationTime=2025-05-01T11:00:00Z, exchangeRateInCents=18.477133333333335}, accountId=null, fileId=null, contractId=null, topicId=null, tokenId=null, topicSequenceNumber=null, topicRunningHash=null, totalSupply=1, scheduleId=null, scheduledTransactionId=null, serials=[1], nodeId=0, duplicates=[], children=[]}, entity=Nft(super=BaseEntity(super=IdEntity(id=1), createdAt=2025-05-01T09:38:31.862344Z, updatedAt=2025-05-01T09:38:31.862344Z), tokenId=1000000, hederaTokenId=0.0.5932364, serials=[1], data=[QmbSG3eZGAJgQRmyNR8krXRHupLZZaEZiX7aU78bDiTxW8])]
         Assertions.assertNotNull(res.receipt().transactionId);

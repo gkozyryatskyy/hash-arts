@@ -27,5 +27,6 @@ create table image
     created_at timestamp not null default current_timestamp,
     updated_at timestamp not null default current_timestamp,
     name       text      not null,
-    ipfs       text      not null
+    ipfs       text      not null,
+    meta_ipfs  text      not null
 );

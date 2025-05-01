@@ -1,10 +1,7 @@
 package com.hasharts.service.hedera;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hasharts.db.model.nft.Image;
 import com.hasharts.db.model.nft.Nft;
-import com.hasharts.service.hedera.model.NftMetadataV2;
-import com.hasharts.service.ipfs.IpfsService;
 import com.hedera.hashgraph.sdk.AccountId;
 import com.hedera.hashgraph.sdk.Client;
 import com.hedera.hashgraph.sdk.Hbar;
@@ -19,11 +16,9 @@ import com.hedera.hashgraph.sdk.TokenType;
 import com.hedera.hashgraph.sdk.TransactionReceipt;
 import com.hasharts.db.model.nft.Token;
 import com.hedera.hashgraph.sdk.TransactionResponse;
-import io.ipfs.api.MerkleNode;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -46,10 +41,6 @@ public class HederaNftService {
     Integer maxTransactionFee;
     @ConfigProperty(name = "nft.token.mint.gateway.prefix")
     String gatewayPrefix;
-    @Inject
-    IpfsService ipfs;
-    @Inject
-    ObjectMapper json;
 
     public record CreateNftResult(TransactionReceipt receipt, Token entity) {
     }
@@ -94,14 +85,8 @@ public class HederaNftService {
     }
 
     public MintNftResult mint(Token token, Image image)
-            throws ReceiptStatusException, PrecheckStatusException, TimeoutException, IOException {
-        String meta = json.writeValueAsString(new NftMetadataV2(image.getName(),
-                gatewayPrefix + image.getIpfs()
-//                    "https://hedera.com/assets/images/favicon.png"
-//                    "https://bafybeidz7rgnm4e6as3cexmmfe76uxpcdvqinvtfljaq5ckw4s65iuudse.ipfs.dweb.link/?filename=nft2.png"
-        ));
-        MerkleNode node = ipfs.add("metadata.json", meta);
-        return mint(token.getId(), token.getHederaTokenId(), token.getSupplyPrivateKey(), List.of(gatewayPrefix + node.hash.toBase58()));
+            throws ReceiptStatusException, PrecheckStatusException, TimeoutException {
+        return mint(token.getId(), token.getHederaTokenId(), token.getSupplyPrivateKey(), List.of(gatewayPrefix + image.getMetaIpfs()));
     }
 
     @Transactional

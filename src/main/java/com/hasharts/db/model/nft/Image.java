@@ -22,4 +22,5 @@ public class Image extends BaseEntity {
 
     private String name;
     private String ipfs;
+    private String metaIpfs;
 }

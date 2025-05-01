@@ -45,5 +45,6 @@ public class GoogleImageGeneratorTest {
         Assertions.assertNotNull(res.entity().getCreatedAt());
         Assertions.assertNotNull(res.entity().getUpdatedAt());
         Assertions.assertNotNull(res.node().hash, res.entity().getIpfs());
+        Assertions.assertNotNull(res.metaNode().hash, res.entity().getMetaIpfs());
     }
 }

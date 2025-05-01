@@ -1,9 +1,11 @@
 package com.hasharts.service.image;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hasharts.client.google.GoogleClient;
 import com.hasharts.client.google.model.RequestDto;
 import com.hasharts.client.google.model.ResponseDto;
 import com.hasharts.db.model.nft.Image;
+import com.hasharts.service.hedera.model.NftMetadataV2;
 import com.hasharts.service.ipfs.IpfsService;
 import io.ipfs.api.MerkleNode;
 import io.ipfs.multibase.binary.Base64;
@@ -30,6 +32,10 @@ public class GoogleImageGenerator {
     String defaultName;
     @Inject
     IpfsService ipfsService;
+    @ConfigProperty(name = "nft.token.mint.gateway.prefix")
+    String gatewayPrefix;
+    @Inject
+    ObjectMapper json;
 
     public ResponseDto generate(String text) {
         log.infof("generate test:%s", text);
@@ -39,7 +45,7 @@ public class GoogleImageGenerator {
     }
 
 
-    public record GenerateAndUploadResult(MerkleNode node, Image entity) {
+    public record GenerateAndUploadResult(MerkleNode node, MerkleNode metaNode, Image entity) {
     }
 
     @Transactional
@@ -49,15 +55,24 @@ public class GoogleImageGenerator {
         if (content == null) {
             throw new IllegalArgumentException("imageContent is null");
         } else {
-            MerkleNode reval = ipfsService.add(defaultName, Base64.decodeBase64(content));
+            // image
+            MerkleNode imageNode = ipfsService.add(defaultName, Base64.decodeBase64(content));
             Image image = new Image();
             Instant now = Instant.now();
             image.setCreatedAt(now);
             image.setUpdatedAt(now);
             image.setName(name);
-            image.setIpfs(reval.hash.toBase58());
+            image.setIpfs(imageNode.hash.toBase58());
+            // meta
+            String meta = json.writeValueAsString(new NftMetadataV2(image.getName(),
+                    gatewayPrefix + image.getIpfs()
+//                    "https://hedera.com/assets/images/favicon.png"
+//                    "https://bafybeidz7rgnm4e6as3cexmmfe76uxpcdvqinvtfljaq5ckw4s65iuudse.ipfs.dweb.link/?filename=nft2.png"
+            ));
+            MerkleNode metaNode = ipfsService.add("metadata.json", meta);
+            image.setMetaIpfs(metaNode.hash.toBase58());
             image.persist();
-            return new GenerateAndUploadResult(reval, image);
+            return new GenerateAndUploadResult(imageNode, metaNode, image);
         }
     }
 

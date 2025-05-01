@@ -35,7 +35,7 @@ import java.util.Optional;
 import lombok.extern.jbosslog.JBossLog;
 import org.eclipse.microprofile.config.ConfigProvider;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "FieldCanBeLocal"})
 @JBossLog
 @Route("")
 public class MainView extends VerticalLayout {
@@ -47,12 +47,12 @@ public class MainView extends VerticalLayout {
 
     private final Grid<Token> tokenGrid;
     private Token selectedToken;
-    private TextField tokenName;
+    private final TextField tokenName;
 
     private final Grid<Image> imageGrid;
     private final TextField aiTest;
     private Image selectedImage;
-    private Avatar imageAvatar;
+    private final Avatar imageAvatar;
 
     private final Grid<Nft> nftGrid;
 
@@ -156,9 +156,9 @@ public class MainView extends VerticalLayout {
                 .setAutoWidth(true).setFlexGrow(0);
         grid.addColumn(Image::getName).setHeader("Name")
                 .setAutoWidth(true).setFlexGrow(0);
-        grid.addColumn(createEmployeeRenderer(gatewayLocalPrefix)).setHeader("Local Url")
+        grid.addColumn(createImageRenderer(gatewayLocalPrefix)).setHeader("Local Url")
                 .setAutoWidth(true).setFlexGrow(0);
-        grid.addColumn(createEmployeeRenderer(gatewayPrefix)).setHeader("Public Url")
+        grid.addColumn(createImageRenderer(gatewayPrefix)).setHeader("Public Url")
                 .setAutoWidth(true).setFlexGrow(0);
         grid.addColumn(Image::getIpfs).setHeader("Ipfs Hash (CID)")
                 .setAutoWidth(true).setFlexGrow(0);
@@ -211,7 +211,7 @@ public class MainView extends VerticalLayout {
         nftGrid.recalculateColumnWidths();
     }
 
-    private static Renderer<Image> createEmployeeRenderer(String prefix) {
+    private static Renderer<Image> createImageRenderer(String prefix) {
         return LitRenderer.<Image>of(
 //                        "<vaadin-avatar img=\"${item.url}\" name=\"${item.name}\" alt=\"Image\"></vaadin-avatar>")
                         "<img src=\"${item.url}\" name=\"${item.name}\" width=\"100\" alt=\"Image\"></img>")

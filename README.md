@@ -1,4 +1,4 @@
-# hedera-nft
+# Hash Arts
 
 # Architecture
 

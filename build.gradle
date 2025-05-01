@@ -1,0 +1,62 @@
+plugins {
+    id 'java'
+    id 'io.quarkus'
+    id 'io.freefair.lombok' version "8.12.2.1"
+}
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+    maven { url 'https://jitpack.io' }
+}
+
+var flyway_version = '4.9.7'
+var ipfs_version = '1.4.4'
+var testcontainers_version = '1.21.0'
+
+dependencies {
+    implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
+    // Quarkus rest server
+    implementation 'io.quarkus:quarkus-rest'
+    implementation 'io.quarkus:quarkus-rest-jackson'
+    implementation 'io.quarkus:quarkus-arc'
+    // Quarkus rest client
+    implementation 'io.quarkus:quarkus-rest-client-jackson'
+    // Quarkus db
+    implementation 'io.quarkus:quarkus-jdbc-postgresql'
+    implementation 'io.quarkus:quarkus-hibernate-reactive-panache'
+    implementation 'io.quarkus:quarkus-reactive-pg-client'
+    // migration
+    implementation 'io.quarkus:quarkus-jdbc-postgresql'
+    implementation 'io.quarkus:quarkus-flyway'
+    implementation "org.flywaydb:flyway-database-postgresql:$flyway_version"
+    // Hedera sdk
+    implementation "com.hedera.hashgraph:sdk:2.53.0"
+    // IPFS
+    implementation "com.github.ipfs:java-ipfs-http-client:$ipfs_version"
+    // Test
+    testImplementation 'io.quarkus:quarkus-junit5'
+    testImplementation 'io.rest-assured:rest-assured'
+    testImplementation "org.testcontainers:testcontainers:$testcontainers_version"
+}
+
+group 'phd'
+version '1.0.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+test {
+    systemProperty "java.util.logging.manager", "org.jboss.logmanager.LogManager"
+}
+
+compileJava {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << '-parameters'
+}
+
+compileTestJava {
+    options.encoding = 'UTF-8'
+}

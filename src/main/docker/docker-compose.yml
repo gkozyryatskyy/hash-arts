@@ -1,0 +1,31 @@
+services:
+
+  postgres:
+    image: postgres:17.4
+    restart: always
+    environment:
+      POSTGRES_USER: local
+      POSTGRES_PASSWORD: local
+      POSTGRES_DB: hash-arts
+    ports:
+      - "5432:5432"
+    volumes:
+      - hash-art-postgresql-data:/var/lib/postgresql/data
+    networks:
+      - hash-art-net
+    command: postgres -c listen_addresses=*
+
+  ipfs:
+    image: 'ipfs/kubo:v0.18.1'
+    ports:
+      - "4001:4001"
+      - "5001:5001"
+      - "8080:8080"
+    user: "ipfs"
+    command: [ "daemon", "--enable-pubsub-experiment" ]
+
+volumes:
+  hash-art-postgresql-data:
+
+networks:
+  hash-art-net:

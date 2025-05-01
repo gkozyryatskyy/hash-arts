@@ -44,16 +44,21 @@ public class GoogleImageGenerator {
     @WithTransaction
     public Uni<GenerateAndUploadResult> upload(String name, ResponseDto input) {
         // persist to IFPS
-        return ipfsService.add(defaultName, Base64.decodeBase64(input.imageContent()))
-                .chain(e -> {
-                    Image image = new Image();
-                    Instant now = Instant.now();
-                    image.setCreatedAt(now);
-                    image.setUpdatedAt(now);
-                    image.setName(name);
-                    image.setIpfs(e.hash.toBase58());
-                    return image.<Image>persist().map(entry -> new GenerateAndUploadResult(e, entry));
-                });
+        String content = input.imageContent();
+        if (content == null) {
+            return Uni.createFrom().failure(new IllegalArgumentException("imageContent is null"));
+        } else {
+            return ipfsService.add(defaultName, Base64.decodeBase64(content))
+                    .chain(e -> {
+                        Image image = new Image();
+                        Instant now = Instant.now();
+                        image.setCreatedAt(now);
+                        image.setUpdatedAt(now);
+                        image.setName(name);
+                        image.setIpfs(e.hash.toBase58());
+                        return image.<Image>persist().map(entry -> new GenerateAndUploadResult(e, entry));
+                    });
+        }
     }
 
     public Uni<GenerateAndUploadResult> generateAndUpload(String name, String text) {

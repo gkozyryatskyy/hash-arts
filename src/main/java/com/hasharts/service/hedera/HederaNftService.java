@@ -42,7 +42,7 @@ public class HederaNftService {
     String operatorKeyDer;
     @ConfigProperty(name = "nft.token.mint.max-transaction-fee.hbar", defaultValue = "10")
     Integer maxTransactionFee;
-    @ConfigProperty(name = "nft.token.mint.gateway.prefix", defaultValue = "https://dweb.link/ipfs/")
+    @ConfigProperty(name = "nft.token.mint.gateway.prefix")
     String gatewayPrefix;
     @Inject
     IpfsService ipfs;

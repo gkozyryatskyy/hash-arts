@@ -8,7 +8,7 @@ import lombok.ToString;
 
 @Getter
 @Setter
-@ToString
+@ToString(includeFieldNames = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ResponseDto {
 
@@ -17,6 +17,9 @@ public class ResponseDto {
 
     // shortener
     public String imageContent() {
-        return getCandidates().getFirst().getContent().getParts().getFirst().getInlineData().getData();
+        return getCandidates().stream().filter(e -> e.getContent() != null)
+                .findFirst().flatMap(cand -> cand.getContent().getParts().stream()
+                        .filter(e -> e.getInlineData() != null)
+                        .findFirst().map(part -> part.getInlineData().getData())).orElse(null);
     }
 }

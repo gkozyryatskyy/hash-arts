@@ -40,8 +40,8 @@ dependencies {
     // UI
     implementation "com.vaadin:vaadin-quarkus-extension:$vaadinVersion"
     implementation "org.jboss.slf4j:slf4j-jboss-logmanager:1.1.0.Final"
-    implementation("com.vaadin:vaadin")
-    implementation("com.vaadin:vaadin-jandex")
+//    implementation("com.vaadin:vaadin")
+//    implementation("com.vaadin:vaadin-jandex")
     // Test
     testImplementation 'io.quarkus:quarkus-junit5'
     testImplementation 'io.rest-assured:rest-assured'

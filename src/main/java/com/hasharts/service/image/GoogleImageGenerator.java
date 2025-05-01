@@ -42,23 +42,22 @@ public class GoogleImageGenerator {
     }
 
     @WithTransaction
-    public Uni<GenerateAndUploadResult> upload(ResponseDto input) {
+    public Uni<GenerateAndUploadResult> upload(String name, ResponseDto input) {
         // persist to IFPS
         return ipfsService.add(defaultName, Base64.decodeBase64(input.imageContent()))
                 .chain(e -> {
-                    //TODO add base64 content to entry?
                     Image image = new Image();
                     Instant now = Instant.now();
                     image.setCreatedAt(now);
                     image.setUpdatedAt(now);
+                    image.setName(name);
                     image.setIpfs(e.hash.toBase58());
                     return image.<Image>persist().map(entry -> new GenerateAndUploadResult(e, entry));
                 });
     }
 
-    public Uni<GenerateAndUploadResult> generateAndUpload(String text) {
-        return generate(text)
-                .chain(this::upload);
+    public Uni<GenerateAndUploadResult> generateAndUpload(String name, String text) {
+        return generate(text).chain(e -> upload(name, e));
 
     }
 }

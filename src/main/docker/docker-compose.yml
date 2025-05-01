@@ -15,6 +15,7 @@ services:
       - hash-art-net
     command: postgres -c listen_addresses=*
 
+  # http://127.0.0.1:5001/webui
   ipfs:
     image: 'ipfs/kubo:v0.34.1'
     ports:

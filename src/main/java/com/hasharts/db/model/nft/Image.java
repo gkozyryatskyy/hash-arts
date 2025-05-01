@@ -20,5 +20,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = false)
 public class Image extends BaseEntity {
 
+    private String name;
     private String ipfs;
 }

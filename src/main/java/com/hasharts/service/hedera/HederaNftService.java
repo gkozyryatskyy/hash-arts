@@ -94,28 +94,14 @@ public class HederaNftService {
 
     public Uni<MintNftResult> mint(Token token, Image image) {
         try {
-            String meta = json.writeValueAsString(new NftMetadataV2("testname",
+            String meta = json.writeValueAsString(new NftMetadataV2(image.getName(),
                     gatewayPrefix + image.getIpfs()
+//                    "https://hedera.com/assets/images/favicon.png"
+//                    "https://bafybeidz7rgnm4e6as3cexmmfe76uxpcdvqinvtfljaq5ckw4s65iuudse.ipfs.dweb.link/?filename=nft2.png"
             ));
             return ipfs.add("metadata.json", meta)
                     .chain(metaNode -> mint(token.getId(), token.getHederaTokenId(), token.getSupplyPrivateKey(),
                             List.of(gatewayPrefix + metaNode.hash.toBase58())));
-            //TODO 8, 10
-//            return mint(token.getId(), token.getHederaTokenId(), token.getSupplyPrivateKey(),
-//                    List.of("https://bafybeigsg65vui52nau5dmvy7hx7xkmcscp6xumiftag3n6yocudv2nczi.ipfs.dweb.link"));
-//        //TODO 9
-//        return mint(token.getId(), token.getHederaTokenId(), token.getSupplyPrivateKey(),
-//                List.of("ipfs://bafybeigsg65vui52nau5dmvy7hx7xkmcscp6xumiftag3n6yocudv2nczi/metadata.json"));
-//        //TODO 12
-//        return mint(token.getId(), token.getHederaTokenId(), token.getSupplyPrivateKey(),
-//                List.of("https://bafybeibo56hmiexzjn2mc2yw7xgtzgobnbsmzv3s4fzg3xs4zcwev4y6hi.ipfs.dweb.link"));
-//        //TODO 15
-//        return mint(token.getId(), token.getHederaTokenId(), token.getSupplyPrivateKey(),
-//                List.of("https://bafybeidbtnv4uq2jpam55whrrnubbd3wmezk5nphi5p3qrrgpewaqpncye.ipfs.dweb.link"));
-////        //        //TODO 16
-//        return mint(token.getId(), token.getHederaTokenId(), token.getSupplyPrivateKey(),
-//                List.of("ipfs://bafybeidbtnv4uq2jpam55whrrnubbd3wmezk5nphi5p3qrrgpewaqpncye/metadata.json"));
-
         } catch (JsonProcessingException e) {
             return Uni.createFrom().failure(e);
         }

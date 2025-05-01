@@ -36,8 +36,8 @@ public class GoogleImageGeneratorTest {
         // http://localhost:8080/ipfs/QmbSG3eZGAJgQRmyNR8krXRHupLZZaEZiX7aU78bDiTxW8
         ResponseDto image = json.readValue(
                 this.getClass().getClassLoader().getResourceAsStream("images/google-image.json"), ResponseDto.class);
-        GenerateAndUploadResult res = VertxContextSupport.subscribeAndAwait(() -> imageGenerator.upload(image));
-        log.info("uploadImage: "+ res);
+        GenerateAndUploadResult res = VertxContextSupport.subscribeAndAwait(() -> imageGenerator.upload(name, image));
+        log.info("uploadImage: " + res);
         // test node
         Assertions.assertEquals(name, res.node().name.orElse(null));
         Assertions.assertTrue(res.node().largeSize.isPresent());

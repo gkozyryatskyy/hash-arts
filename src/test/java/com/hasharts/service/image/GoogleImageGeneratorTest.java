@@ -2,9 +2,7 @@ package com.hasharts.service.image;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hasharts.client.google.model.ResponseDto;
-import com.hasharts.core.IpfsResource;
 import com.hasharts.service.image.GoogleImageGenerator.GenerateAndUploadResult;
-import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.vertx.VertxContextSupport;
 import jakarta.inject.Inject;
@@ -13,7 +11,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-@QuarkusTestResource(IpfsResource.class)
+//@QuarkusTestResource(IpfsResource.class)
 public class GoogleImageGeneratorTest {
 
     @Inject
@@ -33,7 +31,7 @@ public class GoogleImageGeneratorTest {
     @Test
     public void uploadImage() throws Throwable {
         String name = "nft.png";
-        // http://localhost:57300/ipfs/QmbSG3eZGAJgQRmyNR8krXRHupLZZaEZiX7aU78bDiTxW8
+        // http://localhost:8080/ipfs/QmbSG3eZGAJgQRmyNR8krXRHupLZZaEZiX7aU78bDiTxW8
         ResponseDto image = json.readValue(
                 this.getClass().getClassLoader().getResourceAsStream("images/google-image.json"), ResponseDto.class);
         GenerateAndUploadResult res = VertxContextSupport.subscribeAndAwait(() -> imageGenerator.upload(image));
@@ -42,9 +40,9 @@ public class GoogleImageGeneratorTest {
         Assertions.assertTrue(res.node().largeSize.isPresent());
         Assertions.assertNotNull(res.node().hash);
         // test entry
-        Assertions.assertNotNull(res.image().getId());
-        Assertions.assertNotNull(res.image().getCreatedAt());
-        Assertions.assertNotNull(res.image().getUpdatedAt());
-        Assertions.assertNotNull(res.node().hash, res.image().getIpfs());
+        Assertions.assertNotNull(res.entity().getId());
+        Assertions.assertNotNull(res.entity().getCreatedAt());
+        Assertions.assertNotNull(res.entity().getUpdatedAt());
+        Assertions.assertNotNull(res.node().hash, res.entity().getIpfs());
     }
 }

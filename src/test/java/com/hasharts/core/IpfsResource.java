@@ -26,7 +26,7 @@ public class IpfsResource implements QuarkusTestResourceLifecycleManager, DevSer
     @Override
     public Map<String, String> start() {
         // start a container making sure to call withNetworkMode() with the value of containerNetworkId if present
-        this.container = new GenericContainer<>("ipfs/kubo:v0.18.1")
+        this.container = new GenericContainer<>("ipfs/kubo:v0.34.1")
                 .withExposedPorts(4001, 5001, 8080, 8081)
                 .withCommand("daemon --enable-pubsub-experiment")
                 .waitingFor(new DockerHealthcheckWaitStrategy().withStartupTimeout(Duration.of(60, ChronoUnit.SECONDS)));
@@ -42,6 +42,6 @@ public class IpfsResource implements QuarkusTestResourceLifecycleManager, DevSer
 
     @Override
     public void stop() {
-        this.container.close();
+//        this.container.close();
     }
 }

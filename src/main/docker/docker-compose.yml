@@ -16,16 +16,24 @@ services:
     command: postgres -c listen_addresses=*
 
   ipfs:
-    image: 'ipfs/kubo:v0.18.1'
+    image: 'ipfs/kubo:v0.34.1'
     ports:
       - "4001:4001"
-      - "5001:5001"
-      - "8080:8080"
+      - "4001:4001/udp"
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:5001:5001"
     user: "ipfs"
+    volumes:
+      - hash-art-ipfs-export:/export
+      - hash-art-ipfs-data:/data/ipfs
+    networks:
+      - hash-art-net
     command: [ "daemon", "--enable-pubsub-experiment" ]
 
 volumes:
   hash-art-postgresql-data:
+  hash-art-ipfs-export:
+  hash-art-ipfs-data:
 
 networks:
   hash-art-net:

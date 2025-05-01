@@ -1,11 +1,9 @@
 package com.hasharts.config;
 
 import io.ipfs.api.IPFS;
-import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.Produces;
-import java.io.IOException;
 import lombok.extern.jbosslog.JBossLog;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -27,11 +25,12 @@ public class IpfsClientProducer {
         return this.ipfs;
     }
 
-    @PreDestroy
-    void destroy() throws IOException {
-        if (this.ipfs != null) {
-            log.infof("Initialising IPFS client. %s:%s", host, port);
-            this.ipfs.shutdown();
-        }
-    }
+    // shutdown() stops IPFS service
+//    @PreDestroy
+//    void destroy() throws IOException {
+//        if (this.ipfs != null) {
+//            log.infof("Closing IPFS client. %s:%s", host, port);
+//            this.ipfs.shutdown();
+//        }
+//    }
 }

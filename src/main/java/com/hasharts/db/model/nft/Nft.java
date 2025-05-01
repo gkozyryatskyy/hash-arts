@@ -21,7 +21,8 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = false)
 public class Nft extends BaseEntity {
 
-    private String tokenId;
+    private Long tokenId;
+    private String hederaTokenId;
     private List<Long> serials;
     private List<String> data;
 }

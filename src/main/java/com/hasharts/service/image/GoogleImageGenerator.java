@@ -31,12 +31,13 @@ public class GoogleImageGenerator {
     IpfsService ipfsService;
 
     public Uni<ResponseDto> generate(String text) {
+        log.infof("generate test:%s", text);
         return client.generate(key, new RequestDto(text))
-                .invoke(e -> log.info("generateBase64Image.usageMetadata:" + e.getUsageMetadata()));
+                .invoke(e -> log.info("generate.usageMetadata:" + e.getUsageMetadata()));
     }
 
 
-    public record GenerateAndUploadResult(MerkleNode node, Image image) {
+    public record GenerateAndUploadResult(MerkleNode node, Image entity) {
     }
 
     @WithTransaction

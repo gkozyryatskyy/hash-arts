@@ -31,6 +31,7 @@ dependencies {
     implementation 'io.quarkus:quarkus-flyway'
     implementation "org.flywaydb:flyway-database-postgresql:$flyway_version"
     // Hedera sdk
+    implementation("io.grpc:grpc-netty-shaded:1.71.0")
     implementation "com.hedera.hashgraph:sdk:2.53.0"
     // IPFS
     implementation "com.github.ipfs:java-ipfs-http-client:$ipfs_version"

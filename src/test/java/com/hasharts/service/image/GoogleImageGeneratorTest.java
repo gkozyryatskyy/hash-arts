@@ -6,10 +6,12 @@ import com.hasharts.service.image.GoogleImageGenerator.GenerateAndUploadResult;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.vertx.VertxContextSupport;
 import jakarta.inject.Inject;
+import lombok.extern.jbosslog.JBossLog;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+@JBossLog
 @QuarkusTest
 //@QuarkusTestResource(IpfsResource.class)
 public class GoogleImageGeneratorTest {
@@ -35,6 +37,7 @@ public class GoogleImageGeneratorTest {
         ResponseDto image = json.readValue(
                 this.getClass().getClassLoader().getResourceAsStream("images/google-image.json"), ResponseDto.class);
         GenerateAndUploadResult res = VertxContextSupport.subscribeAndAwait(() -> imageGenerator.upload(image));
+        log.info("uploadImage: "+ res);
         // test node
         Assertions.assertEquals(name, res.node().name.orElse(null));
         Assertions.assertTrue(res.node().largeSize.isPresent());

@@ -50,6 +50,10 @@ public class HederaNftServiceTest {
         MintNftResult res = VertxContextSupport.subscribeAndAwait(
                 () -> Panache.withSession(() -> Image.<Image>findById(1000000L))
                         .chain(e -> service.mint(token, e)));
+//        MintNftResult res = VertxContextSupport.subscribeAndAwait(
+//                () -> Panache.withSession(() -> Image.<Image>findById(1000000L))
+//                        .chain(e -> service.mint(token.getId(), token.getHederaTokenId(), token.getSupplyPrivateKey(),
+//                                List.of("ipfs://bafybeigcs7fcqs4uyiljisj7i4k3dnd2443472jq4ppchvothvumf37sou/nft.png"))));
         log.info("mintNft: " + res);
 //        INFO: mintNft: MintNftResult[receipt=TransactionReceipt{transactionId=0.0.5640351@1746092299.562000440, status=SUCCESS, exchangeRate=ExchangeRate{hbars=30000, cents=547697, expirationTime=2025-05-01T10:00:00Z, exchangeRateInCents=18.256566666666668}, nextExchangeRate=ExchangeRate{hbars=30000, cents=554314, expirationTime=2025-05-01T11:00:00Z, exchangeRateInCents=18.477133333333335}, accountId=null, fileId=null, contractId=null, topicId=null, tokenId=null, topicSequenceNumber=null, topicRunningHash=null, totalSupply=1, scheduleId=null, scheduledTransactionId=null, serials=[1], nodeId=0, duplicates=[], children=[]}, entity=Nft(super=BaseEntity(super=IdEntity(id=1), createdAt=2025-05-01T09:38:31.862344Z, updatedAt=2025-05-01T09:38:31.862344Z), tokenId=1000000, hederaTokenId=0.0.5932364, serials=[1], data=[QmbSG3eZGAJgQRmyNR8krXRHupLZZaEZiX7aU78bDiTxW8])]
         Assertions.assertNotNull(res.receipt().transactionId);

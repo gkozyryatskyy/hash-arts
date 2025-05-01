@@ -1,7 +1,11 @@
 package com.hasharts.service.hedera;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hasharts.db.model.nft.Image;
 import com.hasharts.db.model.nft.Nft;
+import com.hasharts.service.hedera.model.NftMetadataV2;
+import com.hasharts.service.ipfs.IpfsService;
 import com.hasharts.util.VertxUtil;
 import com.hedera.hashgraph.sdk.AccountId;
 import com.hedera.hashgraph.sdk.Client;
@@ -38,6 +42,10 @@ public class HederaNftService {
     String operatorKeyDer;
     @ConfigProperty(name = "nft.token.mint.max-transaction-fee.hbar", defaultValue = "10")
     Integer maxTransactionFee;
+    @Inject
+    IpfsService ipfs;
+    @Inject
+    ObjectMapper json;
 
     public record CreateNftResult(TransactionReceipt receipt, Token entity) {
     }
@@ -83,7 +91,14 @@ public class HederaNftService {
     }
 
     public Uni<MintNftResult> mint(Token token, Image image) {
-        return mint(token.getId(), token.getHederaTokenId(), token.getSupplyPrivateKey(), List.of(image.getIpfs()));
+        try {
+            String meta = json.writeValueAsString(new NftMetadataV2("testname", "image/png", image.getIpfs()));
+            return ipfs.add("metadata.json", meta)
+                    .chain(metaNode -> mint(token.getId(), token.getHederaTokenId(), token.getSupplyPrivateKey(),
+                            List.of(metaNode.hash.toBase58())));
+        } catch (JsonProcessingException e) {
+            return Uni.createFrom().failure(e);
+        }
     }
 
     @WithTransaction

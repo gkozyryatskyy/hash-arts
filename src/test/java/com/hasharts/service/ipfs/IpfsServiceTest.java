@@ -24,6 +24,7 @@ public class IpfsServiceTest {
     public void uploadIpfsImage() throws Throwable {
         String name = "nft.png";
         // http://localhost:8080/ipfs/QmbSG3eZGAJgQRmyNR8krXRHupLZZaEZiX7aU78bDiTxW8
+        // https://dweb.link/ipfs/QmbSG3eZGAJgQRmyNR8krXRHupLZZaEZiX7aU78bDiTxW8
         ResponseDto image = json.readValue(
                 this.getClass().getClassLoader().getResourceAsStream("images/google-image.json"), ResponseDto.class);
         MerkleNode node = ipfsService.add(name, image.imageContent()).await().indefinitely();

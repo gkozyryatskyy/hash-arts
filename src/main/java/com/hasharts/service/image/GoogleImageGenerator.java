@@ -6,6 +6,7 @@ import com.hasharts.client.google.model.ResponseDto;
 import com.hasharts.db.model.nft.Image;
 import com.hasharts.service.ipfs.IpfsService;
 import io.ipfs.api.MerkleNode;
+import io.ipfs.multibase.binary.Base64;
 import io.quarkus.hibernate.reactive.panache.common.WithTransaction;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -43,9 +44,9 @@ public class GoogleImageGenerator {
     @WithTransaction
     public Uni<GenerateAndUploadResult> upload(ResponseDto input) {
         // persist to IFPS
-        return ipfsService.add(defaultName, input.imageContent())
+        return ipfsService.add(defaultName, Base64.decodeBase64(input.imageContent()))
                 .chain(e -> {
-                    //TODO add base64?
+                    //TODO add base64 content to entry?
                     Image image = new Image();
                     Instant now = Instant.now();
                     image.setCreatedAt(now);

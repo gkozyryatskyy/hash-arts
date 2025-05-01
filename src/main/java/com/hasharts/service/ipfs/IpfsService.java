@@ -22,7 +22,12 @@ public class IpfsService {
     Vertx vertx;
 
     public Uni<MerkleNode> add(String name, String data) {
-        NamedStreamable.ByteArrayWrapper file = new NamedStreamable.ByteArrayWrapper(name, data.getBytes());
+        return add(name, data.getBytes());
+    }
+
+    public Uni<MerkleNode> add(String name, byte[] data) {
+        NamedStreamable.ByteArrayWrapper file = new NamedStreamable.ByteArrayWrapper(name, data);
+        log.infof("Ipfs add name:%s", name);
         return vertx.executeBlocking(() -> ipfs.add(file).getFirst());
     }
 
